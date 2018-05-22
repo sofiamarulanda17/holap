@@ -1,0 +1,201 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat May 19 19:27:09 2018
+
+@author: Usuario
+"""
+import numpy as np
+from sympy import symbols,Matrix,diff,integrate,sin,cos
+from scipy.linalg import solve
+import matplotlib.pyplot as plt
+from tkinter import *
+from tkinter import Frame, Label, Entry, Button, Scrollbar, END, E, W 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from manuel import fig2
+#matplotlib.use('TkAgg')
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+import matplotlib
+#%%%
+root= Tk() #Crea la ventana 
+root.wm_title("Análisis acústico por elementos finitos")
+root.config(background = "GhostWhite")
+root.geometry('900x680')    #Geometría de la ventana 
+root.resizable(False, False)  #No se puede agrandar la ventana 
+
+#%%%
+
+#Frame de la izquierda
+leftFrame = Frame(root, width=400, height = 700, padx=30)
+leftFrame.grid(row=3, column=0, pady=0, padx=20)
+#Frame para el título 
+Upframe= Frame(root, width= 700, height= 200)
+Upframe.grid(row=0, column=0, columnspan=8, padx= 20, pady=12)
+titulo=Label (Upframe, text="Propagación del sonido en un teatro", fg="royal blue", font=('Elephant', 20)).grid(row=0, column=0)
+subt=Label(Upframe, font= ("Franklin Gothic Book", 11), text="El análisis actústico del problema de la distribución sonora \n en un teatro es solucionado mediante el método de elementos finitos\n que brinda simplicidad, eficacia y precisión.").grid(row=2, column=0, pady=5)
+
+#%%%
+
+#Parámetros del modelo. 
+config= Label(leftFrame, font=("Elephant", 13), fg= "royal blue", text="Configuraciones del modelo").grid(row=2, column=0, padx=10, pady=5)
+
+#El usuario ingrese los elementos en x y en y 
+Label(leftFrame, text="Número de elementos:", font=('Franklin Gothic Book', 10)).grid(row=3)
+elemenx= Entry(leftFrame)
+elemenx.grid(row=8, column=0, pady=2)
+def getelx():
+    global elx   #ESTE 
+    elusuario= elemenx.get()
+    elx=int(elusuario)
+    print (elx)     
+Boton1x=Button(leftFrame, text="Listo", font=('Franklin Gothic Book', 9), command=getelx)
+Boton1x.grid(row=8, column=0, pady=2, sticky=E)
+elemeny= Entry(leftFrame)
+elemeny.grid(row=9, column=0, pady=2)
+def geteny():
+    global ely   #ESTE 
+    elusuarioy= elemeny.get()
+    ely=int(elusuarioy)
+    print (ely)
+Boton1y=Button(leftFrame, text="Listo", font=('Franklin Gothic Book', 9), command=geteny)
+Boton1y.grid(row=9, column=0, pady=2, sticky=E)
+labelnx=Label(leftFrame, text="      X:",font=('Franklin Gothic Book', 10)).grid(row=8, column=0, sticky=W)
+labelny=Label(leftFrame, text="      Y:",font=('Franklin Gothic Book', 10)).grid(row=9, column=0, sticky=W)
+
+#El usuario ingrese el término fuente 
+Label(leftFrame, text="Término fuente:", font=('Franklin Gothic Book', 10)).grid(row=10, column=0)
+tf= Entry(leftFrame)
+tf.grid(row=11, column=0, pady=2)
+def gettf():
+    global terminof   #ESTE 
+    terminof= tf.get()
+    print (terminof)   
+Botontf=Button(leftFrame, text="Listo", font=('Franklin Gothic Book', 9),command=gettf)
+Botontf.grid(row=11, column=0, pady=2, sticky=E)
+
+#Posición de la fuente en x y y 
+Label(leftFrame, text="Posición de la fuente:",font=('Franklin Gothic Book', 10)).grid(row=13, column=0)
+fuentex= Entry(leftFrame)
+fuentey=Entry(leftFrame)
+labelx=Label(leftFrame, text="      X:",font=('Franklin Gothic Book', 10)).grid(row=14, column=0, sticky=W)
+labely=Label(leftFrame, text="      Y:",font=('Franklin Gothic Book', 10)).grid(row=15, column=0, sticky=W)
+fuentex.grid(row=14, column=0)
+fuentey.grid(row=15, column=0)
+def getx():
+    global fenx              #ESTE
+    fuenteenx= fuentex.get()
+    fenx=int(fuenteenx)
+    print (fenx)         
+def gety():
+    global feny             #ESTE
+    fuenteeny= fuentey.get()
+    feny=int(fuenteeny)
+    print (feny) 
+
+Botonx=Button(leftFrame, text="Listo", command=getx,font=('Franklin Gothic Book', 9))
+Botonx.grid(row=14, column=0,sticky=E)
+Botonx.focus()
+Botony=Button(leftFrame, text="Listo", command=gety, font=('Franklin Gothic Book', 9))
+Botony.grid(row=15, column=0,pady=2, sticky=E)
+
+#Scrollbar con las opciones de geometrías. 
+Label(leftFrame, text="Geometría:",font=('Franklin Gothic Book', 10)).grid(row=17, column=0, padx=10, pady=2)
+barra=Scrollbar(leftFrame)
+barra.grid(row=18, column=0, pady=2, sticky=E)
+opgeometria = Listbox(leftFrame, yscrollcommand=barra.set, height=4,font=('Franklin Gothic Book', 9)) #HEIGHT MODIFICA LA ALTURITAP DE LA VENTANA 
+for line in range(4):
+   opgeometria.insert(ANCHOR, "Geometría  " + str(line))
+otra=opgeometria.insert(END, "Otra")
+opgeometria.grid(row=18, column=0, pady=2)
+barra.config(command = opgeometria.yview)
+def CurSelet(event):
+    global geo 
+    geo=opgeometria.get(opgeometria.curselection())
+    print (geo)        #GEO ES LA OPCIÓN PARA LA GEO SELECCIONADA 
+    return geo 
+Geometriausuario= opgeometria.bind('<<ListboxSelect>>',CurSelet)
+ingreseaca=Label(leftFrame, text="Ingresar geometría",font=('Franklin Gothic Book', 10)).grid(row=19, column=0)
+geoing=Entry(leftFrame, state= NORMAL)
+geoing.insert(END, ".meshio")
+geoing.grid(row=20, column=0)
+def getgeo():
+    global geousuario
+    geousuario= geoing.get()
+    print (geousuario)
+    return geousuario
+botongeo= Button(leftFrame, text="Listo", command=getgeo, state=NORMAL,font=('Franklin Gothic Book', 9)).grid(row=20, column=0, sticky=E)
+
+ingvtk=Label(leftFrame,text= "Nombre su vtk", font=('Franklin Gothic Book', 10) ).grid(row=22, column=0)
+vtk=Entry(leftFrame, state= NORMAL)
+vtk.insert(END, ".vtk")
+vtk.grid(row=23, column=0)
+def getVTK():
+    global VTKusuario
+    VTKusuario= vtk.get()
+    print (VTKusuario)
+    return VTKusuario
+botongeo= Button(leftFrame, text="Listo", command=getVTK, state=NORMAL,font=('Franklin Gothic Book', 9)).grid(row=23, column=0, sticky=E)
+
+#%% PROGRAMA (PONER EL PROGRAMA ACÁ CON LA FUNCIÓN PROGRAMA)
+
+Com= Button(leftFrame, text= "Comenzar") #command=programa) #,command= getprograma) #PONER ACÁ LA FUNCIÓN DE CORRER EL PROGRAMA 
+Label(leftFrame, text="").grid(row=24, column=0)
+Com.grid(row=25, column=0, pady=3)
+
+#%% Panel derecho para la gráfica. 
+RightFrame= Frame(root, width=300, height=450)
+RightFrame.grid(row=3, column=1)
+grafica= Label(RightFrame, text="Distribución sonora para la geometría", font=('Franklin Gothic Book', 10)).grid(row=0, column=0, sticky=EW)
+Acavalagrafica = Canvas(RightFrame, width=500, height=300, bg='white')
+Acavalagrafica.grid(row=1, column=0, padx=10, pady=2)
+"""
+def drawfig(canvas, figure):
+ 
+    figure_canvas_agg = FigureCanvasAgg(fig2)
+    figure_canvas_agg.draw()
+    figure_x, figure_y, figure_w, figure_h = figure.bbox.bounds
+    figure_w, figure_h = int(figure_w), int(figure_h)
+    photo = tk.PhotoImage(master=canvas, width=figure_w, height=figure_h)
+    # Unfortunately, there's no accessor for the pointer to the native renderer
+    tkagg.blit(photo, figure_canvas_agg.get_renderer()._renderer, colormode=2)
+
+    return photo
+
+
+# Create the figure we desire to add to an existing canvas
+fig = mpl.fig2.Figure(figsize=(2, 1))
+ax = fig.add_axes([0, 0, 1, 1])
+ax.plot(X, Y)
+
+# Keep this handle alive, or else figure will disappear
+fig_x, fig_y = 100, 100
+fig_photo = draw_figure(canvas, fig, loc=(fig_x, fig_y))
+fig_w, fig_h = fig_photo.width(), fig_photo.height()
+
+# Add more elements to the canvas, potentially on top of the figure
+canvas.create_line(200, 50, fig_x + fig_w / 2, fig_y + fig_h / 2)
+canvas.create_text(200, 50, text="Zero-crossing", anchor="s")
+
+# Let Tk take over
+
+
+
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mainloop()
